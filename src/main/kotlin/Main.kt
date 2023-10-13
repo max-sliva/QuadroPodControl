@@ -30,14 +30,16 @@ import kotlin.math.atan
 
 @Composable
 @Preview
-fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>) {
-    var text by remember { mutableStateOf("Hello, World!") }
-    //todo сделать 2 массива для 4 офсетов по х и у или один массив с парами значений
+fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: Array<ImageBitmap>) {
+//    var text by remember { mutableStateOf("Hello, World!") }
+    //массив с мапом: начальные точки, оффсеты и точки поворота в виде пар значений
+    var arrayForGettingAngles = arrayOf<HashMap<String, Pair<Float, Float>>>()
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     var degs by remember { mutableStateOf(0f) }
-    var katet1 by remember { mutableStateOf(0f) }
-    var katet2 by remember { mutableStateOf(0f) }
+    var currentArm = 0
+//    var katet1 by remember { mutableStateOf(0f) }
+//    var katet2 by remember { mutableStateOf(0f) }
     var arm1RotatePointX by remember { mutableStateOf(0f) }
     var arm1RotatePointY by remember { mutableStateOf(0f) }
     var startPointX by remember { mutableStateOf(0f) }
@@ -84,23 +86,14 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>) {
 //                    }
 //                )
             ) {
-                val canvasQuadrantSize = size / 2F
+//                val canvasQuadrantSize = size / 2F
                 try {
                     drawImage(
                         image = quadroPodBody,
                         topLeft = Offset(0F, 0F)
                     )
-                    val arm1 = useResource("arm1.PNG") { loadImageBitmap(it) }
-                   //вычисляем катеты для угла поворота //todo сделать отдельную ф-ию для этого
-                    katet1 = arm1RotatePointX - (startPointX + offsetX)
-//                    katet2 = arm1RotatePointY + startPointY +offsetY
-                    katet2 = startPointY + offsetY - arm1RotatePointY
-                    val tan = katet2 / abs(katet1) //тангенс угла поворота
-//                    print(" offsetY = $offsetY   offsetX = $offsetX")
-//                    print(" katet2 = $katet2   katet1 = $katet1")
-                    if (offsetY.toInt() != 0)
-                        degs = toDegrees(atan(tan).toDouble()).toFloat() //сам угол поворота
-                    else degs = 0F
+                    val arm1 = arms[0]
+                    degs = angle(arm1RotatePointX, arm1RotatePointY, startPointX, startPointY, offsetX, offsetY)
                     print(" angle = $degs ")
                     arm1RotatePointX = arm1.width.toFloat()
                     arm1RotatePointY = (arm1.height / 2).toFloat()
@@ -120,6 +113,27 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>) {
             }
         }
     }
+}
+
+fun angle(
+    arm1RotatePointX: Float,
+    arm1RotatePointY: Float,
+    startPointX: Float,
+    startPointY: Float,
+    offsetX: Float,
+    offsetY: Float
+): Float {
+    var degs: Float
+    //вычисляем катеты для угла поворота
+    val katet1 = arm1RotatePointX - (startPointX + offsetX)
+    val katet2 = startPointY + offsetY - arm1RotatePointY
+    val tan = katet2 / abs(katet1) //тангенс угла поворота
+//                    print(" offsetY = $offsetY   offsetX = $offsetX")
+//                    print(" katet2 = $katet2   katet1 = $katet1")
+    if (offsetY.toInt() != 0)
+        degs = toDegrees(atan(tan).toDouble()).toFloat() //сам угол поворота
+    else degs = 0F
+    return degs
 }
 
 fun main() = application {
@@ -143,12 +157,19 @@ fun main() = application {
     println("image size on start= ${quadroPodBody.width} x ${quadroPodBody.height}")
     Window(onCloseRequest = ::exitApplication, state = WindowState(size = DpSize(bodyWidth.dp, bodyHeight.dp))) {
 //    Window(onCloseRequest = ::exitApplication ) {
-        App(quadroPodBody, rotatePoints)
+        App(quadroPodBody, rotatePoints, loadArms())
     }
 }
 
-fun loadArms(): Array<ImageBitmap> {
+fun loadArms(): Array<ImageBitmap> { //для загрузки изображений ног робота (плечи)
     var armImagesArray = arrayOf<ImageBitmap>()
-
+    for (i in 0..3){
+        val arm = useResource("arm${i+1}.PNG") { loadImageBitmap(it) }
+        armImagesArray = armImagesArray.plus(arm)
+    }
+//    armImagesArray.forEach {
+//        println("arm = ${it.height}")
+//    }
     return armImagesArray
 }
+
