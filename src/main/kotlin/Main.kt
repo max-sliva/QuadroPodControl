@@ -33,6 +33,7 @@ import kotlin.math.atan
 fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: Array<ImageBitmap>) {
 //    var text by remember { mutableStateOf("Hello, World!") }
     //массив с мапом: начальные точки, оффсеты и точки поворота в виде пар значений
+//    todo вставить в него все оффсеты, нач.точки и точки поворота
     var arrayForGettingAngles = arrayOf<HashMap<String, Pair<Float, Float>>>()
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
