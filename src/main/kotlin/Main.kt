@@ -38,6 +38,7 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     var degs by remember { mutableStateOf(0f) }
+    var angleOnDragEnd by remember { mutableStateOf(0f) }
     var currentArm = 0
 //    var katet1 by remember { mutableStateOf(0f) }
 //    var katet2 by remember { mutableStateOf(0f) }
@@ -59,19 +60,27 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 //                            println("x = ${it.x}  y = ${it.y}")
 //                        }
 //                    )
-                    detectDragGestures(
+//                   if (degs<=65)
+                       detectDragGestures(
                         onDragStart = { touch ->
-                            println("\nStart of the interaction is x=${touch.x} y=${touch.y}")
+//                            println("\nStart of the interaction is x=${touch.x} y=${touch.y}")
                             startPointX = touch.x
                             startPointY = touch.y
+//                            degs-=angleOnDragEnd
+//                            angleOnDragEnd = degs
                         },
                         onDrag = { change, dragAmount ->
                             change.consume()
-//                        println("in listener x = ${dragAmount.x} y = ${dragAmount.y}")
+//                            println("in listener x    = ${dragAmount.x}  y = ${dragAmount.y}  ")
+//                            println("arm1RotatePointX = $arm1RotatePointX arm1RotatePointY = $arm1RotatePointY" )
                             //todo сделать определение зоны касания, и увеличивать соотвествующую offset из массива офсетов
                             offsetX += dragAmount.x
                             offsetY += dragAmount.y
-                        }
+                        },
+                       onDragEnd = {
+                           println("angle on drag end = $degs")
+//                           angleOnDragEnd = degs
+                       }
                     )
 //                    detectDragGestures { change, dragAmount ->
 //                        change.consume()
@@ -94,20 +103,53 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                         topLeft = Offset(0F, 0F)
                     )
                     val arm1 = arms[0]
-                    degs = angle(arm1RotatePointX, arm1RotatePointY, startPointX, startPointY, offsetX, offsetY)
-                    print(" angle = $degs ")
+                    degs = angle(arm1RotatePointX, arm1RotatePointY, startPointX, startPointY, offsetX, offsetY) - angleOnDragEnd
+//                    todo разобраться с началом поворота, чтобы не дергалась картинка, когда не с начала берем лапу
+                        //скорее всего, нужно угол после поворота запоминать
+                    println(" angle = $degs ")
                     arm1RotatePointX = arm1.width.toFloat()
                     arm1RotatePointY = (arm1.height / 2).toFloat()
 //                    rotate(degrees = -degs, Offset(arm1RotatePointX, arm1RotatePointY)){
-                    rotate(degrees = -degs, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())){
+                    //ограничиваем поворот
+//                    if (degs<=65 || degs>=-90)
+//                    if (degs<=65)
+                    if (degs<=65 && degs>-85 && startPointX+offsetX < arm1RotatePointX)
+                        rotate(degrees = -degs, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())){
                         drawImage(
                             image = arm1,
                             topLeft = Offset(0F, 0F)
     //                            topLeft = Offset(offsetX, offsetY)
                         )
-                    }
+
+                    } else
+//                        if (degs >=60)
+                        if (startPointY+offsetY > arm1RotatePointY)
+                        rotate(degrees = -65F, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
+                            drawImage(
+                                image = arm1,
+                                topLeft = Offset(0F, 0F)
+                                //                            topLeft = Offset(offsetX, offsetY)
+                            )
+                        }
+                    else
+                        if (startPointY+offsetY < arm1RotatePointY)
+                        rotate(degrees = 85F, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
+                            drawImage(
+                                image = arm1,
+                                topLeft = Offset(0F, 0F)
+                                //                            topLeft = Offset(offsetX, offsetY)
+                            )
+                        }
+//                    else if (degs<=-90)
+//                        rotate(degrees = 90F, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
+//                            drawImage(
+//                                image = arm1,
+//                                topLeft = Offset(0F, 0F)
+//                                //                            topLeft = Offset(offsetX, offsetY)
+//                            )
+//                        }
 //                    println("image size = ${quadroPodBody.width} x ${quadroPodBody.height}")
-                } catch (e: NullPointerException) {
+                        } catch (e: NullPointerException) {
 //                    Toast.makeText(applicationContext,"No image", Toast.LENGTH_LONG).show()
                     println("No image")
                 }
