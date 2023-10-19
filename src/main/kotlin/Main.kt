@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 //import androidx.compose.ui.draw.EmptyBuildDrawCacheParams.size
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -61,13 +62,13 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 //                        }
 //                    )
 //                   if (degs<=65)
-                       detectDragGestures(
+                    detectDragGestures(
                         onDragStart = { touch ->
 //                            println("\nStart of the interaction is x=${touch.x} y=${touch.y}")
                             startPointX = touch.x
                             startPointY = touch.y
-//                            degs-=angleOnDragEnd
-//                            angleOnDragEnd = degs
+                            offsetX = 0F //сбрасываем оффсеты, чтобы нормально двигать ногу
+                            offsetY = 0F
                         },
                         onDrag = { change, dragAmount ->
                             change.consume()
@@ -77,10 +78,10 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                             offsetX += dragAmount.x
                             offsetY += dragAmount.y
                         },
-                       onDragEnd = {
-                           println("angle on drag end = $degs")
+                        onDragEnd = {
+                            println("angle on drag end = $degs")
 //                           angleOnDragEnd = degs
-                       }
+                        }
                     )
 //                    detectDragGestures { change, dragAmount ->
 //                        change.consume()
@@ -102,44 +103,59 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                         image = quadroPodBody,
                         topLeft = Offset(0F, 0F)
                     )
+                    //todo сделать общую ф-ию для позиционирования лап на общей картинке
                     val arm1 = arms[0]
-                    degs = angle(arm1RotatePointX, arm1RotatePointY, startPointX, startPointY, offsetX, offsetY) - angleOnDragEnd
-//                    todo разобраться с началом поворота, чтобы не дергалась картинка, когда не с начала берем лапу
-                        //скорее всего, нужно угол после поворота запоминать
-                    println(" angle = $degs ")
-                    arm1RotatePointX = arm1.width.toFloat()
+                    armRotate(arm1, startPointX, startPointY, offsetX, offsetY, rotatePoints)
+                } catch (e: NullPointerException) {
+//                    Toast.makeText(applicationContext,"No image", Toast.LENGTH_LONG).show()
+                    println("No image")
+                }
+                   /* arm1RotatePointX = arm1.width.toFloat()
                     arm1RotatePointY = (arm1.height / 2).toFloat()
-//                    rotate(degrees = -degs, Offset(arm1RotatePointX, arm1RotatePointY)){
+                    degs = angle(
+                        arm1RotatePointX,
+                        arm1RotatePointY,
+                        startPointX,
+                        startPointY,
+                        offsetX,
+                        offsetY
+                    ) - angleOnDragEnd
+                    println(" angle = $degs ")
                     //ограничиваем поворот
 //                    if (degs<=65 || degs>=-90)
 //                    if (degs<=65)
-                    if (degs<=65 && degs>-85 && startPointX+offsetX < arm1RotatePointX)
-                        rotate(degrees = -degs, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())){
-                        drawImage(
-                            image = arm1,
-                            topLeft = Offset(0F, 0F)
-    //                            topLeft = Offset(offsetX, offsetY)
-                        )
-
-                    } else
+                    if (degs <= 65 && degs > -85 && startPointX + offsetX < arm1RotatePointX)
+                        rotate(
+                            degrees = -degs,
+                            Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())
+                        ) {
+                            drawImage(
+                                image = arm1,
+                                topLeft = Offset(0F, 0F)
+                            )
+                        } else
 //                        if (degs >=60)
-                        if (startPointY+offsetY > arm1RotatePointY)
-                        rotate(degrees = -65F, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
-                            drawImage(
-                                image = arm1,
-                                topLeft = Offset(0F, 0F)
-                                //                            topLeft = Offset(offsetX, offsetY)
-                            )
-                        }
-                    else
-                        if (startPointY+offsetY < arm1RotatePointY)
-                        rotate(degrees = 85F, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
-                            drawImage(
-                                image = arm1,
-                                topLeft = Offset(0F, 0F)
-                                //                            topLeft = Offset(offsetX, offsetY)
-                            )
-                        }
+                        if (startPointY + offsetY > arm1RotatePointY)
+                            rotate(
+                                degrees = -65F,
+                                Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())
+                            ) {
+                                drawImage(
+                                    image = arm1,
+                                    topLeft = Offset(0F, 0F)
+                                )
+                            }
+                        else
+                            if (startPointY + offsetY < arm1RotatePointY)
+                                rotate(
+                                    degrees = 85F,
+                                    Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())
+                                ) {
+                                    drawImage(
+                                        image = arm1,
+                                        topLeft = Offset(0F, 0F)
+                                    )
+                                }*/
 //                    else if (degs<=-90)
 //                        rotate(degrees = 90F, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
 //                            drawImage(
@@ -149,13 +165,50 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 //                            )
 //                        }
 //                    println("image size = ${quadroPodBody.width} x ${quadroPodBody.height}")
-                        } catch (e: NullPointerException) {
-//                    Toast.makeText(applicationContext,"No image", Toast.LENGTH_LONG).show()
-                    println("No image")
-                }
             }
         }
     }
+}
+
+//@Composable
+fun DrawScope.armRotate(
+    arm1: ImageBitmap,
+    startPointX: Float,
+    startPointY: Float,
+    offsetX: Float,
+    offsetY: Float,
+    rotatePoints: Array<Pair<Int, Int>>
+) {
+    val arm1RotatePointX = arm1.width.toFloat()
+    val arm1RotatePointY = (arm1.height / 2).toFloat()
+    val degs = angle(arm1RotatePointX, arm1RotatePointY, startPointX, startPointY, offsetX, offsetY)
+    println(" angle = $degs ")
+    //ограничиваем поворот
+//                    if (degs<=65 || degs>=-90)
+//                    if (degs<=65)
+    if (degs <= 65 && degs > -85 && startPointX + offsetX < arm1RotatePointX)
+        rotate(degrees = -degs, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
+            drawImage(
+                image = arm1,
+                topLeft = Offset(0F, 0F)
+            )
+        } else
+//                        if (degs >=60)
+        if (startPointY + offsetY > arm1RotatePointY)
+            rotate(degrees = -65F, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
+                drawImage(
+                    image = arm1,
+                    topLeft = Offset(0F, 0F)
+                )
+            }
+        else
+            if (startPointY + offsetY < arm1RotatePointY)
+                rotate(degrees = 85F, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
+                    drawImage(
+                        image = arm1,
+                        topLeft = Offset(0F, 0F)
+                    )
+                }
 }
 
 fun angle(
@@ -170,7 +223,7 @@ fun angle(
     //вычисляем катеты для угла поворота
     val katet1 = arm1RotatePointX - (startPointX + offsetX)
     val katet2 = startPointY + offsetY - arm1RotatePointY
-    val tan = katet2 / abs(katet1) //тангенс угла поворота
+    val tan = katet2 / kotlin.math.abs(katet1) //тангенс угла поворота
 //                    print(" offsetY = $offsetY   offsetX = $offsetX")
 //                    print(" katet2 = $katet2   katet1 = $katet1")
     if (offsetY.toInt() != 0)
@@ -187,11 +240,11 @@ fun main() = application {
     val image = quadroPodBody
     val pixMap = image.toPixelMap()
     var rotatePoints = arrayOf<Pair<Int, Int>>()
-    for (x in 11 until image.width) { //в циклах ищем красные точки, чтоб их добавить к полигону
+    for (x in 11 until image.width) { //в циклах ищем зеленые точки, чтоб их добавить к массиву точек поворота
         for (y in 11 until image.height) {
-            if (pixMap[x, y].green in (0.7..1.0)){
+            if (pixMap[x, y].green in (0.7..1.0)) {
 //                println("found green at $x $y")
-                rotatePoints = rotatePoints.plus(Pair(x,y))
+                rotatePoints = rotatePoints.plus(Pair(x, y))
             }
         }
     }
@@ -206,8 +259,8 @@ fun main() = application {
 
 fun loadArms(): Array<ImageBitmap> { //для загрузки изображений ног робота (плечи)
     var armImagesArray = arrayOf<ImageBitmap>()
-    for (i in 0..3){
-        val arm = useResource("arm${i+1}.PNG") { loadImageBitmap(it) }
+    for (i in 0..3) {
+        val arm = useResource("arm${i + 1}.PNG") { loadImageBitmap(it) }
         armImagesArray = armImagesArray.plus(arm)
     }
 //    armImagesArray.forEach {
