@@ -259,6 +259,9 @@ fun main() = application {
 
 fun loadArms(): Array<ImageBitmap> { //для загрузки изображений ног робота (плечи)
     var armImagesArray = arrayOf<ImageBitmap>()
+//    repeat(3){
+//
+//    }
     for (i in 0..3) {
         val arm = useResource("arm${i + 1}.PNG") { loadImageBitmap(it) }
         armImagesArray = armImagesArray.plus(arm)
