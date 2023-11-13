@@ -4,11 +4,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -25,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
-import java.lang.Math.abs
 import java.lang.Math.toDegrees
 import kotlin.math.atan
 
@@ -36,6 +31,12 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
     //массив с мапом: начальные точки, оффсеты и точки поворота в виде пар значений
 //    todo вставить в него все оффсеты, нач.точки и точки поворота
     var arrayForGettingAngles = arrayOf<HashMap<String, Pair<Float, Float>>>()
+    var offsetXArray = remember { mutableStateListOf<Float>() }
+    var offsetYArray = remember { mutableStateListOf<Float>() }
+    repeat(4){
+        offsetXArray.add(0F)
+        offsetYArray.add(0F)
+    }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     var degs by remember { mutableStateOf(0f) }
@@ -45,6 +46,13 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 //    var katet2 by remember { mutableStateOf(0f) }
     var arm1RotatePointX by remember { mutableStateOf(0f) }
     var arm1RotatePointY by remember { mutableStateOf(0f) }
+    var startPointXArray = remember { mutableStateListOf<Float>() }
+    var startPointYArray = remember { mutableStateListOf<Float>() }
+    repeat(4){
+        startPointXArray.add(0F)
+        startPointYArray.add(0F)
+    }
+
     var startPointX by remember { mutableStateOf(0f) }
     var startPointY by remember { mutableStateOf(0f) }
 //    print(" angle at start = $degs")
@@ -69,6 +77,17 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                             startPointY = touch.y
                             offsetX = 0F //сбрасываем оффсеты, чтобы нормально двигать ногу
                             offsetY = 0F
+                            if (startPointX<quadroPodBody.width/2 && startPointY<quadroPodBody.height/2){
+                                startPointXArray[0] = startPointX
+                                startPointYArray[0] = startPointY
+                                offsetXArray[0] = offsetX
+                                offsetYArray[0] = offsetY
+                            } else if (startPointX<quadroPodBody.width/2 && startPointY>quadroPodBody.height/2){
+                                startPointXArray[1] = startPointX
+                                startPointYArray[1] = startPointY
+                                offsetXArray[1] = offsetX
+                                offsetYArray[1] = offsetY
+                            }
                         },
                         onDrag = { change, dragAmount ->
                             change.consume()
@@ -77,6 +96,13 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                             //todo сделать определение зоны касания, и увеличивать соотвествующую offset из массива офсетов
                             offsetX += dragAmount.x
                             offsetY += dragAmount.y
+                            if (startPointX<quadroPodBody.width/2 && startPointY<quadroPodBody.height/2){ //для arm1
+                                offsetXArray[0] += dragAmount.x
+                                offsetYArray[0] += dragAmount.y
+                            } else if (startPointX<quadroPodBody.width/2 && startPointY>quadroPodBody.height/2){ //для arm2
+                                offsetXArray[1] += dragAmount.x
+                                offsetYArray[1] += dragAmount.y
+                            }
                         },
                         onDragEnd = {
                             println("angle on drag end = $degs")
@@ -105,7 +131,14 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                     )
                     //todo сделать общую ф-ию для позиционирования лап на общей картинке
                     val arm1 = arms[0]
-                    armRotate(arm1, startPointX, startPointY, offsetX, offsetY, rotatePoints)
+                    armRotate(0F,0F,arm1, startPointXArray[0], startPointYArray[0], offsetXArray[0], offsetYArray[0], rotatePoints[0])
+//                    armRotate(0F,0F,arm1, startPointX, startPointY, offsetX, offsetY, rotatePoints)
+                    val arm2 = arms[1]
+//                    val x0ForArm2 = rotatePoints[1].first
+//                    val y0ForArm2 = rotatePoints[1].second-rotatePoints[0].second
+                    val y0ForArm2 = rotatePoints[1].second-80 //позиционируем вторую лапу
+
+                    armRotate( 0F, y0ForArm2.toFloat(), arm2, startPointXArray[1], startPointYArray[1], offsetXArray[1], offsetYArray[1], rotatePoints[1])
                 } catch (e: NullPointerException) {
 //                    Toast.makeText(applicationContext,"No image", Toast.LENGTH_LONG).show()
                     println("No image")
@@ -170,43 +203,47 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
     }
 }
 
-//@Composable
+//todo сделать общую ф-ию для 4-х лап
+//поправить для второй лапы
 fun DrawScope.armRotate(
-    arm1: ImageBitmap,
+    x0: Float = 0F,
+    y0: Float = 0F,
+    arm: ImageBitmap,
     startPointX: Float,
     startPointY: Float,
     offsetX: Float,
     offsetY: Float,
-    rotatePoints: Array<Pair<Int, Int>>
+//    rotatePoints: Array<Pair<Int, Int>>
+    rotatePoints: Pair<Int, Int>
 ) {
-    val arm1RotatePointX = arm1.width.toFloat()
-    val arm1RotatePointY = (arm1.height / 2).toFloat()
+    val arm1RotatePointX = arm.width.toFloat()
+    val arm1RotatePointY = (arm.height / 2).toFloat()
     val degs = angle(arm1RotatePointX, arm1RotatePointY, startPointX, startPointY, offsetX, offsetY)
     println(" angle = $degs ")
     //ограничиваем поворот
 //                    if (degs<=65 || degs>=-90)
 //                    if (degs<=65)
     if (degs <= 65 && degs > -85 && startPointX + offsetX < arm1RotatePointX)
-        rotate(degrees = -degs, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
+        rotate(degrees = -degs, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
             drawImage(
-                image = arm1,
-                topLeft = Offset(0F, 0F)
+                image = arm,
+                topLeft = Offset(x0, y0)
             )
         } else
 //                        if (degs >=60)
         if (startPointY + offsetY > arm1RotatePointY)
-            rotate(degrees = -65F, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
+            rotate(degrees = -65F, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                 drawImage(
-                    image = arm1,
-                    topLeft = Offset(0F, 0F)
+                    image = arm,
+                    topLeft = Offset(x0, y0)
                 )
             }
         else
             if (startPointY + offsetY < arm1RotatePointY)
-                rotate(degrees = 85F, Offset(rotatePoints[0].first.toFloat(), rotatePoints[0].second.toFloat())) {
+                rotate(degrees = 85F, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                     drawImage(
-                        image = arm1,
-                        topLeft = Offset(0F, 0F)
+                        image = arm,
+                        topLeft = Offset(x0, y0)
                     )
                 }
 }
