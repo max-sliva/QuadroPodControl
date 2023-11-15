@@ -164,15 +164,15 @@ fun DrawScope.armRotate(
 //    rotatePoints: Array<Pair<Int, Int>>
     rotatePoints: Pair<Int, Int>
 ) {
-    val arm1RotatePointX = arm.width.toFloat()
-    val arm1RotatePointY = (arm.height / 2).toFloat()
-    val degs = angle(arm1RotatePointX, arm1RotatePointY+y0, startPointX, startPointY, offsetX, offsetY)
+    val armRotatePointX = arm.width.toFloat()
+    val armRotatePointY = (arm.height / 2).toFloat()
+    val degs = angle(armRotatePointX, armRotatePointY+y0, startPointX, startPointY, offsetX, offsetY)
     println(" angle = $degs ")
     //ограничиваем поворот
 //                    if (degs<=65 || degs>=-90)
 //                    if (degs<=65)
     if (armNumber==1) { //для arm1
-        if (degs <= 65 && degs > -85 && startPointX + offsetX < arm1RotatePointX)
+        if (degs <= 65 && degs > -85 && startPointX + offsetX < armRotatePointX)
             rotate(degrees = -degs, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                 drawImage(
                     image = arm,
@@ -180,7 +180,7 @@ fun DrawScope.armRotate(
                 )
             } else
 //                        if (degs >=60)
-            if (startPointY + offsetY > arm1RotatePointY)
+            if (startPointY + offsetY > armRotatePointY)
                 rotate(degrees = -65F, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                     drawImage(
                         image = arm,
@@ -188,7 +188,7 @@ fun DrawScope.armRotate(
                     )
                 }
             else
-                if (startPointY + offsetY < arm1RotatePointY)
+                if (startPointY + offsetY < armRotatePointY)
                     rotate(degrees = 85F, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                         drawImage(
                             image = arm,
@@ -196,15 +196,15 @@ fun DrawScope.armRotate(
                         )
                     }
     } else  if (armNumber==2) {
-        println("startPointY = $startPointY, offsetY = $offsetY, arm1RotatePointY +y0= ${arm1RotatePointY + y0}")
-        if (degs >= -65 && degs <= 85 && startPointX + offsetX < arm1RotatePointX)
+//        println("startPointY = $startPointY, offsetY = $offsetY, arm1RotatePointY +y0= ${armRotatePointY + y0}")
+        if (degs >= -65 && degs <= 85 && startPointX + offsetX < armRotatePointX)
             rotate(degrees = -degs, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                 drawImage(
                     image = arm,
                     topLeft = Offset(x0, y0)
                 )
             }
-        else if ((startPointY + offsetY) < (arm1RotatePointY+y0)){
+        else if ((startPointY + offsetY) < (armRotatePointY+y0)){
             rotate(degrees = 65F, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                 drawImage(
                     image = arm,
@@ -212,7 +212,7 @@ fun DrawScope.armRotate(
                 )
             }
         }
-        else if ((startPointY + offsetY) > (arm1RotatePointY+y0))
+        else if ((startPointY + offsetY) > (armRotatePointY+y0))
             rotate(degrees = -85F, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                 drawImage(
                     image = arm,
@@ -220,18 +220,35 @@ fun DrawScope.armRotate(
                 )
             }
     } else  if (armNumber==3) {
-        if (degs <= 60 && degs >= -85 && startPointX + offsetX > arm1RotatePointX)
+        println("in arm3 startPointY = $startPointY, offsetY = $offsetY, arm1RotatePointY = $armRotatePointY y0 = $y0")
+        println("in arm3 degs = $degs")
+        if (degs <= 60 && degs >= -85 && startPointX + offsetX > armRotatePointX || degs ==0F ) {
+            println("between")
             rotate(degrees = degs, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                 drawImage(
                     image = arm,
                     topLeft = Offset(x0, y0)
                 )
             }
-        else
-            drawImage(
-                image = arm,
-                topLeft = Offset(x0, y0)
-            )
+        }
+        else if ((startPointY + offsetY) > (armRotatePointY)){
+            println("up")
+            rotate(degrees = 60F, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
+                drawImage(
+                    image = arm,
+                    topLeft = Offset(x0, y0)
+                )
+            }
+        }
+        else if ((startPointY + offsetY) < (armRotatePointY)) {
+            println("down")
+            rotate(degrees = -85F, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
+                drawImage(
+                    image = arm,
+                    topLeft = Offset(x0, y0)
+                )
+            }
+        }
     } else  if (armNumber==4) {
         rotate(degrees = degs, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
             drawImage(
@@ -254,6 +271,7 @@ fun angle(
     var degs: Float
     //вычисляем катеты для угла поворота
     val katet1 = arm1RotatePointX - (startPointX + offsetX)
+//    val katet1 = arm1RotatePointX + (startPointX + offsetX)
     val katet2 = startPointY + offsetY - arm1RotatePointY
     val tan = katet2 / kotlin.math.abs(katet1) //тангенс угла поворота
 //                    print(" offsetY = $offsetY   offsetX = $offsetX")
