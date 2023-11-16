@@ -220,8 +220,8 @@ fun DrawScope.armRotate(
                 )
             }
     } else  if (armNumber==3) {
-        println("in arm3 startPointY = $startPointY, offsetY = $offsetY, arm1RotatePointY = $armRotatePointY y0 = $y0")
-        println("in arm3 degs = $degs")
+//        println("in arm3 startPointY = $startPointY, offsetY = $offsetY, arm1RotatePointY = $armRotatePointY y0 = $y0")
+//        println("in arm3 degs = $degs")
         if (degs <= 60 && degs >= -85 && startPointX + offsetX > armRotatePointX || degs ==0F ) {
             println("between")
             rotate(degrees = degs, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
@@ -250,12 +250,30 @@ fun DrawScope.armRotate(
             }
         }
     } else  if (armNumber==4) {
-        rotate(degrees = degs, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
-            drawImage(
-                image = arm,
-                topLeft = Offset(x0, y0)
-            )
+        println("in arm4 startPointY = $startPointY, offsetY = $offsetY, arm1RotatePointY = $armRotatePointY y0 = $y0")
+        println("in arm4 degs = $degs")
+        if (degs <= 85 && degs >= -60 && startPointX + offsetX > armRotatePointX || degs ==0F ) {
+            rotate(degrees = degs, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
+                drawImage(
+                    image = arm,
+                    topLeft = Offset(x0, y0)
+                )
+            }
+        }else if ((startPointY + offsetY) < (armRotatePointY+y0)){
+            rotate(degrees = -60F, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
+                drawImage(
+                    image = arm,
+                    topLeft = Offset(x0, y0)
+                )
+            }
         }
+        else if ((startPointY + offsetY) > (armRotatePointY+y0))
+            rotate(degrees = 85F, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
+                drawImage(
+                    image = arm,
+                    topLeft = Offset(x0, y0)
+                )
+            }
     }
 
 }
