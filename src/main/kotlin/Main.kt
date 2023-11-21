@@ -1,6 +1,10 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
@@ -24,6 +28,7 @@ import androidx.compose.ui.window.application
 import java.lang.Math.toDegrees
 import kotlin.math.atan
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 @Preview
 fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: Array<ImageBitmap>) {
@@ -65,7 +70,7 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
             Canvas(modifier = Modifier.fillMaxSize()
                 .pointerInput(Unit) {
 //                    detectTapGestures(
-//                        onTap = {
+//                        onLongPress = {
 //                            println("x = ${it.x}  y = ${it.y}")
 //                        }
 //                    )
@@ -113,8 +118,20 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                         onDragEnd = {
                             println("angle on drag end = $degs")
 //                           angleOnDragEnd = degs
-                        }
+                        },
+//                        onTap = {it:Offset->
+//                            println("clicked")
+//                        }
                     )
+//                    detectTapAndPress()
+//                    detectTapGestures(
+//                        onTap = {
+//                            println("x = ${it.x}  y = ${it.y}")
+//                        }
+//                        onPress = {
+//                            println("Clicked")
+//                        }
+//                    )
 //                    detectDragGestures { change, dragAmount ->
 //                        change.consume()
 ////                        println("in listener x = ${dragAmount.x} y = ${dragAmount.y}")
@@ -122,9 +139,19 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 //                        offsetY += dragAmount.y
 //                    }
                 }
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            println("x = ${it.x}  y = ${it.y}")
+                        }
+                    )
+                }
                 //todo сделать обработку клика на картинку
-//                .clickable (
+//                .combinedClickable (
 //                    onClick = {
+////                        println("Clicked")
+//                    },
+//                    onLongClick = {
 //                        println("Clicked")
 //                    }
 //                )
