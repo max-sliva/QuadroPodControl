@@ -7,7 +7,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,15 +20,18 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
+import androidx.compose.ui.semantics.Role.Companion.Button
+import androidx.compose.ui.text.input.KeyboardType.Companion.Text
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import java.lang.Math.toDegrees
 import kotlin.math.atan
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 @Preview
 fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: Array<ImageBitmap>) {
@@ -46,9 +49,6 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
     var offsetY by remember { mutableStateOf(0f) }
     var degs by remember { mutableStateOf(0f) }
     var angleOnDragEnd by remember { mutableStateOf(0f) }
-    var currentArm = 0
-//    var katet1 by remember { mutableStateOf(0f) }
-//    var katet2 by remember { mutableStateOf(0f) }
     var arm1RotatePointX by remember { mutableStateOf(0f) }
     var arm1RotatePointY by remember { mutableStateOf(0f) }
     var startPointXArray = remember { mutableStateListOf<Float>() }
@@ -60,6 +60,8 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 
     var startPointX by remember { mutableStateOf(0f) }
     var startPointY by remember { mutableStateOf(0f) }
+    val openDialog = remember { mutableStateOf(false) }
+    var curArm by remember { mutableStateOf(-1) }
 //    print(" angle at start = $degs")
     MaterialTheme {
         Column(
@@ -67,6 +69,7 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
             horizontalAlignment = Alignment.CenterHorizontally, //по центру горизонтально
 //            verticalArrangement = Arrangement.Center //и вертикально
         ) {
+            if (openDialog.value) MakeAlertDialog(curArm.toString(), openDialog) //для вызова окна с
             Canvas(modifier = Modifier.fillMaxSize()
                 .pointerInput(Unit) {
 //                    detectTapGestures(
@@ -104,14 +107,14 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                             offsetX += dragAmount.x
                             offsetY += dragAmount.y
                             var number = 0
-                            if (startPointX < quadroPodBody.width / 2 && startPointY < quadroPodBody.height / 2) number =
-                                0 //для arm1
-                            else if (startPointX < quadroPodBody.width / 2 && startPointY > quadroPodBody.height / 2) number =
-                                1 //для arm2
-                            else if (startPointX > quadroPodBody.width / 2 && startPointY < quadroPodBody.height / 2) number =
-                                2   //для третьей лапы
-                            else if (startPointX > quadroPodBody.width / 2 && startPointY > quadroPodBody.height / 2) number =
-                                3    //для четвертой лапы
+                            if (startPointX < quadroPodBody.width / 2 && startPointY < quadroPodBody.height / 2)
+                                number = 0 //для leg1
+                            else if (startPointX < quadroPodBody.width / 2 && startPointY > quadroPodBody.height / 2)
+                                number = 1 //для leg2
+                            else if (startPointX > quadroPodBody.width / 2 && startPointY < quadroPodBody.height / 2)
+                                number = 2   //для leg3
+                            else if (startPointX > quadroPodBody.width / 2 && startPointY > quadroPodBody.height / 2)
+                                number = 3    //для leg4
                             offsetXArray[number] += dragAmount.x
                             offsetYArray[number] += dragAmount.y
                         },
@@ -119,42 +122,26 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                             println("angle on drag end = $degs")
 //                           angleOnDragEnd = degs
                         },
-//                        onTap = {it:Offset->
-//                            println("clicked")
-//                        }
                     )
-//                    detectTapAndPress()
-//                    detectTapGestures(
-//                        onTap = {
-//                            println("x = ${it.x}  y = ${it.y}")
-//                        }
-//                        onPress = {
-//                            println("Clicked")
-//                        }
-//                    )
-//                    detectDragGestures { change, dragAmount ->
-//                        change.consume()
-////                        println("in listener x = ${dragAmount.x} y = ${dragAmount.y}")
-//                        offsetX += dragAmount.x
-//                        offsetY += dragAmount.y
-//                    }
                 }
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {
                             println("x = ${it.x}  y = ${it.y}")
+                            var number = 0
+                            if (it.x < quadroPodBody.width / 2 && it.y < quadroPodBody.height / 2) number = 0 //для arm1
+                            else if (it.x < quadroPodBody.width / 2 && it.y > quadroPodBody.height / 2) number =
+                                1 //для arm2
+                            else if (it.x > quadroPodBody.width / 2 && it.y < quadroPodBody.height / 2) number =
+                                2   //для третьей лапы
+                            else if (it.x > quadroPodBody.width / 2 && it.y > quadroPodBody.height / 2) number =
+                                3    //для четвертой лапы
+                            println("leg = $number")
+                            curArm = number
+                            openDialog.value = true
                         }
                     )
                 }
-                //todo сделать обработку клика на картинку
-//                .combinedClickable (
-//                    onClick = {
-////                        println("Clicked")
-//                    },
-//                    onLongClick = {
-//                        println("Clicked")
-//                    }
-//                )
             ) {
 //                val canvasQuadrantSize = size / 2F
                 try {
@@ -162,7 +149,6 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                         image = quadroPodBody,
                         topLeft = Offset(0F, 0F)
                     )
-                    //todo сделать общую ф-ию для позиционирования лап на общей картинке
                     val arm1 = arms[0]
                     armRotate(
                         1,
@@ -225,6 +211,39 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>) {
+    AlertDialog(
+        onDismissRequest = { openDialog.value = false },//действия при закрытии окна
+        modifier = Modifier.fillMaxSize(),
+        title = { Text(text = curArm) }, //заголовок окна
+        text = {
+            val legBody = useResource("leg${curArm.toInt() + 1}_body_.PNG") { loadImageBitmap(it) }//содержимое окна
+            Canvas(
+                modifier = Modifier.fillMaxSize()
+            //todo добавить поворот leg в этом канвасе
+
+            ) {
+                try {
+                    drawImage(
+                        image = legBody,
+                        topLeft = Offset(0F, 0F)
+                    )
+                } catch (e: NullPointerException) {
+//                    Toast.makeText(applicationContext,"No image", Toast.LENGTH_LONG).show()
+                    println("No image")
+                }
+
+            }
+        },
+        confirmButton = { //кнопка Ok, которая будет закрывать окно
+            Button(onClick = { openDialog.value = false })
+            { Text(text = "OK") }
+        }
+    )
 }
 
 fun DrawScope.armRotate(
