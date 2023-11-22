@@ -1,8 +1,6 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
@@ -20,11 +18,8 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
-import androidx.compose.ui.semantics.Role.Companion.Button
-import androidx.compose.ui.text.input.KeyboardType.Companion.Text
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
@@ -53,11 +48,14 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
     var arm1RotatePointY by remember { mutableStateOf(0f) }
     var startPointXArray = remember { mutableStateListOf<Float>() }
     var startPointYArray = remember { mutableStateListOf<Float>() }
+    var legStartPointXArray = remember { mutableStateListOf<Float>() }
+    var legStartPointYArray = remember { mutableStateListOf<Float>() }
     repeat(4) {
         startPointXArray.add(0F)
         startPointYArray.add(0F)
+        legStartPointXArray.add(0F)
+        legStartPointYArray.add(0F)
     }
-
     var startPointX by remember { mutableStateOf(0f) }
     var startPointY by remember { mutableStateOf(0f) }
     val openDialog = remember { mutableStateOf(false) }
@@ -69,7 +67,11 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
             horizontalAlignment = Alignment.CenterHorizontally, //по центру горизонтально
 //            verticalArrangement = Arrangement.Center //и вертикально
         ) {
-            if (openDialog.value) MakeAlertDialog(curArm.toString(), openDialog) //для вызова окна с
+            if (openDialog.value) MakeAlertDialog(curArm.toString(), openDialog, legStartPointXArray[curArm], legStartPointYArray[curArm] ){x,y->
+                legStartPointXArray[curArm]=x
+                legStartPointYArray[curArm]=y
+                println("xForLeg = $x yForLeg= $y")
+            } //для вызова окна с нужной leg
             Canvas(modifier = Modifier.fillMaxSize()
                 .pointerInput(Unit) {
 //                    detectTapGestures(
@@ -126,7 +128,7 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                 }
                 .pointerInput(Unit) {
                     detectTapGestures(
-                        onTap = {
+                        onTap = {//при клике на нужной arm
                             println("x = ${it.x}  y = ${it.y}")
                             var number = 0
                             if (it.x < quadroPodBody.width / 2 && it.y < quadroPodBody.height / 2) number = 0 //для arm1
@@ -215,17 +217,45 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>) {
-    AlertDialog(
+fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPointX: Float, startPointY: Float, onUpdate: (x: Float, y: Float)->Unit) { //показываем окно с нужным leg для его поворота
+    AlertDialog( //todo сделать передачу в MakeAlertDialog угла вместо startPointX и startPointY
         onDismissRequest = { openDialog.value = false },//действия при закрытии окна
         modifier = Modifier.fillMaxSize(),
         title = { Text(text = curArm) }, //заголовок окна
-        text = {
+        text = { //внутрення часть окна
             val legBody = useResource("leg${curArm.toInt() + 1}_body_.PNG") { loadImageBitmap(it) }//содержимое окна
             Canvas(
                 modifier = Modifier.fillMaxSize()
             //todo добавить поворот leg в этом канвасе
-
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { touch ->
+//                            println("\nStart of the interaction is x=${touch.x} y=${touch.y}")
+                                onUpdate(touch.x, touch.y)
+//                                offsetX = 0F //сбрасываем оффсеты, чтобы нормально двигать ногу
+//                                offsetY = 0F
+                                var number = 0
+//                                startPointXArray[number] = startPointX
+//                                startPointYArray[number] = startPointY
+//                                offsetXArray[number] = offsetX
+//                                offsetYArray[number] = offsetY
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+//                            println("in listener x    = ${dragAmount.x}  y = ${dragAmount.y}  ")
+//                            println("arm1RotatePointX = $arm1RotatePointX arm1RotatePointY = $arm1RotatePointY" )
+//                                offsetX += dragAmount.x
+//                                offsetY += dragAmount.y
+//                                var number = 0
+//                                offsetXArray[number] += dragAmount.x
+//                                offsetYArray[number] += dragAmount.y
+                            },
+                            onDragEnd = {
+                              //  println("angle on drag end = $degs")
+//                           angleOnDragEnd = degs
+                            },
+                        )
+                    }
             ) {
                 try {
                     drawImage(
