@@ -223,17 +223,19 @@ fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPoin
         modifier = Modifier.fillMaxSize(),
         title = { Text(text = curArm) }, //заголовок окна
         text = { //внутрення часть окна
+            val backImage = useResource("back.PNG") { loadImageBitmap(it) }
             val legBody = useResource("leg${curArm.toInt() + 1}_body_.PNG") { loadImageBitmap(it) }//содержимое окна
             val pixMap = legBody.toPixelMap()
-            var rotatePoint: Pair<Int, Int>
+            var rotatePoint: Pair<Int, Int>? = null
             for (x in 11 until legBody.width) { //в циклах ищем зеленые точки, чтоб их добавить к массиву точек поворота
                 for (y in 11 until legBody.height) {
                     if (pixMap[x, y].green in (0.7..1.0) && pixMap[x, y].red <0.5 && pixMap[x, y].blue<0.5 ) {
-                        println("found green on leg${curArm.toInt() + 1} at $x $y")
+//                        println("found green on leg${curArm.toInt() + 1} at $x $y")
                         rotatePoint = Pair(x, y)
                     }
                 }
             }
+            println("pair.x = ${rotatePoint?.first}, pair.y = ${rotatePoint?.second}")
             Canvas(
                 modifier = Modifier.fillMaxSize()
             //todo добавить поворот leg в этом канвасе
@@ -267,16 +269,35 @@ fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPoin
                         )
                     }
             ) {
+                val leg = useResource("leg${curArm.toInt() + 1}.PNG") { loadImageBitmap(it) }//сама рука
                 try { //todo сделать определение номера ноги и выбор - сначала body, потом leg, или наоборот
                     drawImage(
-                        image = legBody,
+                        image = backImage,
                         topLeft = Offset(0F, 0F)
                     )
+                    if (curArm.toInt()==0 || curArm.toInt()==3) {
+                        drawImage(
+                            image = leg,
+                            topLeft = Offset(0F, 0F)
+                        )
+                        drawImage(
+                            image = legBody,
+                            topLeft = Offset(0F, 0F)
+                        )
+                    } else {
+                        drawImage(
+                            image = legBody,
+                            topLeft = Offset(0F, 0F)
+                        )
+                        drawImage(
+                            image = leg,
+                            topLeft = Offset(0F, 0F)
+                        )
+                    }
                 } catch (e: NullPointerException) {
 //                    Toast.makeText(applicationContext,"No image", Toast.LENGTH_LONG).show()
                     println("No image")
                 }
-                val leg = useResource("leg${curArm.toInt() + 1}.PNG") { loadImageBitmap(it) }//сама рука
 //                val degs = angle(armRotatePointX, armRotatePointY + y0, startPointX, startPointY, offsetX, offsetY)
             }
         },
