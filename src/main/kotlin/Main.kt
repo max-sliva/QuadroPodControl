@@ -235,7 +235,7 @@ fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPoin
                     }
                 }
             }
-            println("pair.x = ${rotatePoint?.first}, pair.y = ${rotatePoint?.second}")
+            println("for leg body pair.x = ${rotatePoint?.first}, pair.y = ${rotatePoint?.second}")
             Canvas(
                 modifier = Modifier.fillMaxSize()
             //todo добавить поворот leg в этом канвасе
@@ -270,15 +270,32 @@ fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPoin
                     }
             ) {
                 val leg = useResource("leg${curArm.toInt() + 1}.PNG") { loadImageBitmap(it) }//сама рука
-                try { //todo сделать определение номера ноги и выбор - сначала body, потом leg, или наоборот
+                println("leg image width = ${leg.width}")
+                var rotatePointLeg: Pair<Int, Int>? = null
+                val pixMapForLeg = leg.toPixelMap()
+                for (x in 11 until leg.width) { //в циклах ищем зеленые точки, чтоб их добавить к массиву точек поворота
+                    for (y in 11 until leg.height) {
+                        if ((pixMapForLeg[x, y].green in (0.7..1.0) && curArm.toInt() != 0)
+                            || (curArm.toInt() == 0 && pixMapForLeg[x, y].green in (0.7..1.0) && pixMapForLeg[x, y].red <0.3 && pixMap[x, y].blue<0.3)
+                            ) {
+//                        println("found green on leg${curArm.toInt() + 1} at $x $y")
+                            rotatePointLeg = Pair(x, y)
+                        }
+                    }
+                }
+                //todo сделать поворот лап
+                println("for leg pair.x = ${rotatePointLeg?.first}, pair.y = ${rotatePointLeg?.second}")
+                try {
                     drawImage(
                         image = backImage,
                         topLeft = Offset(0F, 0F)
                     )
-                    if (curArm.toInt()==0 || curArm.toInt()==3) {
+                    println("curArm = $curArm")
+                    if (curArm.toInt()==0 || curArm.toInt()==2) {
                         drawImage(
                             image = leg,
-                            topLeft = Offset(0F, 0F)
+                            topLeft = Offset((rotatePoint!!.first - rotatePointLeg!!.first).toFloat(), (rotatePoint.second - rotatePointLeg.second).toFloat())
+//                            topLeft = Offset(0F, 0F)
                         )
                         drawImage(
                             image = legBody,
@@ -291,7 +308,7 @@ fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPoin
                         )
                         drawImage(
                             image = leg,
-                            topLeft = Offset(0F, 0F)
+                            topLeft = Offset((rotatePoint!!.first - rotatePointLeg!!.first).toFloat(), (rotatePoint.second - rotatePointLeg.second).toFloat())
                         )
                     }
                 } catch (e: NullPointerException) {
