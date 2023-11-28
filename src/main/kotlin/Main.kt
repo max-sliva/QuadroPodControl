@@ -67,9 +67,14 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
             horizontalAlignment = Alignment.CenterHorizontally, //по центру горизонтально
 //            verticalArrangement = Arrangement.Center //и вертикально
         ) {
-            if (openDialog.value) MakeAlertDialog(curArm.toString(), openDialog, legStartPointXArray[curArm], legStartPointYArray[curArm] ){x,y->
-                legStartPointXArray[curArm]=x
-                legStartPointYArray[curArm]=y
+            if (openDialog.value) MakeAlertDialog(
+                curArm.toString(),
+                openDialog,
+                legStartPointXArray[curArm],
+                legStartPointYArray[curArm]
+            ) { x, y ->
+                legStartPointXArray[curArm] = x
+                legStartPointYArray[curArm] = y
                 println("xForLeg = $x yForLeg= $y")
             } //для вызова окна с нужной leg
             Canvas(modifier = Modifier.fillMaxSize()
@@ -217,7 +222,13 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPointX: Float, startPointY: Float, onUpdate: (x: Float, y: Float)->Unit) { //показываем окно с нужным leg для его поворота
+fun MakeAlertDialog(
+    curArm: String,
+    openDialog: MutableState<Boolean>,
+    startPointX: Float,
+    startPointY: Float,
+    onUpdate: (x: Float, y: Float) -> Unit
+) { //показываем окно с нужным leg для его поворота
     AlertDialog( //todo сделать передачу в MakeAlertDialog угла вместо startPointX и startPointY
         onDismissRequest = { openDialog.value = false },//действия при закрытии окна
         modifier = Modifier.fillMaxSize(),
@@ -229,23 +240,30 @@ fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPoin
             var rotatePoint: Pair<Int, Int>? = null
             for (x in 11 until legBody.width) { //в циклах ищем зеленые точки, чтоб их добавить к массиву точек поворота
                 for (y in 11 until legBody.height) {
-                    if (pixMap[x, y].green in (0.7..1.0) && pixMap[x, y].red <0.5 && pixMap[x, y].blue<0.5 ) {
+                    if (pixMap[x, y].green in (0.7..1.0) && pixMap[x, y].red < 0.5 && pixMap[x, y].blue < 0.5) {
 //                        println("found green on leg${curArm.toInt() + 1} at $x $y")
                         rotatePoint = Pair(x, y)
                     }
                 }
             }
+            var offsetX by remember { mutableStateOf(0f) }
+            var offsetY by remember { mutableStateOf(0f) }
+            var startPointX by remember { mutableStateOf(0f) }
+            var startPointY by remember { mutableStateOf(0f) }
             println("for leg body pair.x = ${rotatePoint?.first}, pair.y = ${rotatePoint?.second}")
             Canvas(
                 modifier = Modifier.fillMaxSize()
-            //todo добавить поворот leg в этом канвасе
+                    //todo добавить поворот leg в этом канвасе
                     .pointerInput(Unit) {
                         detectDragGestures(
                             onDragStart = { touch ->
 //                            println("\nStart of the interaction is x=${touch.x} y=${touch.y}")
                                 onUpdate(touch.x, touch.y)
-//                                offsetX = 0F //сбрасываем оффсеты, чтобы нормально двигать ногу
-//                                offsetY = 0F
+                                startPointX = touch.x
+                                startPointY = touch.y
+
+                                offsetX = 0F //сбрасываем оффсеты, чтобы нормально двигать ногу
+                                offsetY = 0F
                                 var number = 0
 //                                startPointXArray[number] = startPointX
 //                                startPointYArray[number] = startPointY
@@ -256,14 +274,14 @@ fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPoin
                                 change.consume()
 //                            println("in listener x    = ${dragAmount.x}  y = ${dragAmount.y}  ")
 //                            println("arm1RotatePointX = $arm1RotatePointX arm1RotatePointY = $arm1RotatePointY" )
-//                                offsetX += dragAmount.x
-//                                offsetY += dragAmount.y
+                                offsetX += dragAmount.x
+                                offsetY += dragAmount.y
 //                                var number = 0
 //                                offsetXArray[number] += dragAmount.x
 //                                offsetYArray[number] += dragAmount.y
                             },
                             onDragEnd = {
-                              //  println("angle on drag end = $degs")
+                                //  println("angle on drag end = $degs")
 //                           angleOnDragEnd = degs
                             },
                         )
@@ -276,8 +294,8 @@ fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPoin
                 for (x in 11 until leg.width) { //в циклах ищем зеленые точки, чтоб их добавить к массиву точек поворота
                     for (y in 11 until leg.height) {
                         if ((pixMapForLeg[x, y].green in (0.7..1.0) && curArm.toInt() != 0)
-                            || (curArm.toInt() == 0 && pixMapForLeg[x, y].green in (0.7..1.0) && pixMapForLeg[x, y].red <0.3 && pixMap[x, y].blue<0.3)
-                            ) {
+                            || (curArm.toInt() == 0 && pixMapForLeg[x, y].green in (0.7..1.0) && pixMapForLeg[x, y].red < 0.3 && pixMap[x, y].blue < 0.3)
+                        ) {
 //                        println("found green on leg${curArm.toInt() + 1} at $x $y")
                             rotatePointLeg = Pair(x, y)
                         }
@@ -291,10 +309,13 @@ fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPoin
                         topLeft = Offset(0F, 0F)
                     )
                     println("curArm = $curArm")
-                    if (curArm.toInt()==0 || curArm.toInt()==2) {
+                    if (curArm.toInt() == 0 || curArm.toInt() == 2) {
                         drawImage(
                             image = leg,
-                            topLeft = Offset((rotatePoint!!.first - rotatePointLeg!!.first).toFloat(), (rotatePoint.second - rotatePointLeg.second).toFloat())
+                            topLeft = Offset(
+                                (rotatePoint!!.first - rotatePointLeg!!.first).toFloat(),
+                                (rotatePoint.second - rotatePointLeg.second).toFloat()
+                            )
 //                            topLeft = Offset(0F, 0F)
                         )
                         drawImage(
@@ -308,7 +329,10 @@ fun MakeAlertDialog(curArm: String, openDialog: MutableState<Boolean>, startPoin
                         )
                         drawImage(
                             image = leg,
-                            topLeft = Offset((rotatePoint!!.first - rotatePointLeg!!.first).toFloat(), (rotatePoint.second - rotatePointLeg.second).toFloat())
+                            topLeft = Offset(
+                                (rotatePoint!!.first - rotatePointLeg!!.first).toFloat(),
+                                (rotatePoint.second - rotatePointLeg.second).toFloat()
+                            )
                         )
                     }
                 } catch (e: NullPointerException) {
