@@ -48,13 +48,15 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
     var arm1RotatePointY by remember { mutableStateOf(0f) }
     var startPointXArray = remember { mutableStateListOf<Float>() }
     var startPointYArray = remember { mutableStateListOf<Float>() }
-    var legStartPointXArray = remember { mutableStateListOf<Float>() }
-    var legStartPointYArray = remember { mutableStateListOf<Float>() }
+//    var legStartPointXArray = remember { mutableStateListOf<Float>() }
+//    var legStartPointYArray = remember { mutableStateListOf<Float>() }
+    var degsForLegs = remember { mutableStateListOf<Float>() } //массив для хранения углов для каждой leg
     repeat(4) {
         startPointXArray.add(0F)
         startPointYArray.add(0F)
-        legStartPointXArray.add(0F)
-        legStartPointYArray.add(0F)
+//        legStartPointXArray.add(0F)
+//        legStartPointYArray.add(0F)
+        degsForLegs.add(0F)
     }
     var startPointX by remember { mutableStateOf(0f) }
     var startPointY by remember { mutableStateOf(0f) }
@@ -70,12 +72,13 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
             if (openDialog.value) MakeAlertDialog(
                 curArm.toString(),
                 openDialog,
-                legStartPointXArray[curArm],
-                legStartPointYArray[curArm]
-            ) { x, y ->
-                legStartPointXArray[curArm] = x
-                legStartPointYArray[curArm] = y
-                println("xForLeg = $x yForLeg= $y")
+                degsForLegs[curArm]
+//                legStartPointXArray[curArm],
+//                legStartPointYArray[curArm]
+            ) { x -> //ф-ия обратного вызова для запоминания угла
+                degsForLegs[curArm] = x
+//                legStartPointYArray[curArm] = y
+//                println("degsForLegs = $x ")
             } //для вызова окна с нужной leg
             Canvas(modifier = Modifier.fillMaxSize()
                 .pointerInput(Unit) {
@@ -134,7 +137,7 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {//при клике на нужной arm
-                            println("x = ${it.x}  y = ${it.y}")
+//                            println("x = ${it.x}  y = ${it.y}")
                             var number = 0
                             if (it.x < quadroPodBody.width / 2 && it.y < quadroPodBody.height / 2) number = 0 //для arm1
                             else if (it.x < quadroPodBody.width / 2 && it.y > quadroPodBody.height / 2) number =
@@ -143,7 +146,7 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                                 2   //для третьей лапы
                             else if (it.x > quadroPodBody.width / 2 && it.y > quadroPodBody.height / 2) number =
                                 3    //для четвертой лапы
-                            println("leg = $number")
+//                            println("leg = $number")
                             curArm = number
                             openDialog.value = true
                         }
@@ -225,11 +228,12 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 fun MakeAlertDialog(
     curArm: String,
     openDialog: MutableState<Boolean>,
-    startPointX: Float,
-    startPointY: Float,
-    onUpdate: (x: Float, y: Float) -> Unit
+    degsInLeg: Float,
+//    startPointX: Float,
+//    startPointY: Float,
+    onUpdate: (x: Float) -> Unit
 ) { //показываем окно с нужным leg для его поворота
-    AlertDialog( //todo сделать передачу в MakeAlertDialog угла вместо startPointX и startPointY
+    AlertDialog(
         onDismissRequest = { openDialog.value = false },//действия при закрытии окна
         modifier = Modifier.fillMaxSize(),
         title = { Text(text = curArm) }, //заголовок окна
@@ -250,7 +254,9 @@ fun MakeAlertDialog(
             var offsetY by remember { mutableStateOf(0f) }
             var startPointX by remember { mutableStateOf(0f) }
             var startPointY by remember { mutableStateOf(0f) }
-            println("for leg body pair.x = ${rotatePoint?.first}, pair.y = ${rotatePoint?.second}")
+            var degs by remember { mutableStateOf(0f) }
+            degs = degsInLeg
+//            println("for leg body pair.x = ${rotatePoint?.first}, pair.y = ${rotatePoint?.second}")
             Canvas(
                 modifier = Modifier.fillMaxSize()
                     //todo добавить поворот leg в этом канвасе
@@ -258,7 +264,7 @@ fun MakeAlertDialog(
                         detectDragGestures(
                             onDragStart = { touch ->
 //                            println("\nStart of the interaction is x=${touch.x} y=${touch.y}")
-                                onUpdate(touch.x, touch.y)
+//                                onUpdate(touch.x, touch.y)
                                 startPointX = touch.x
                                 startPointY = touch.y
 
@@ -276,6 +282,9 @@ fun MakeAlertDialog(
 //                            println("arm1RotatePointX = $arm1RotatePointX arm1RotatePointY = $arm1RotatePointY" )
                                 offsetX += dragAmount.x
                                 offsetY += dragAmount.y
+                                degs = angle(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat(), startPointX, startPointY, offsetX, offsetY)
+                                onUpdate(degs)
+
 //                                var number = 0
 //                                offsetXArray[number] += dragAmount.x
 //                                offsetYArray[number] += dragAmount.y
@@ -288,7 +297,7 @@ fun MakeAlertDialog(
                     }
             ) {
                 val leg = useResource("leg${curArm.toInt() + 1}.PNG") { loadImageBitmap(it) }//сама рука
-                println("leg image width = ${leg.width}")
+//                println("leg image width = ${leg.width}")
                 var rotatePointLeg: Pair<Int, Int>? = null
                 val pixMapForLeg = leg.toPixelMap()
                 for (x in 11 until leg.width) { //в циклах ищем зеленые точки, чтоб их добавить к массиву точек поворота
@@ -302,22 +311,27 @@ fun MakeAlertDialog(
                     }
                 }
                 //todo сделать поворот лап
-                println("for leg pair.x = ${rotatePointLeg?.first}, pair.y = ${rotatePointLeg?.second}")
+//                println("for leg pair.x = ${rotatePointLeg?.first}, pair.y = ${rotatePointLeg?.second}")
+//                val degs = angle(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat(), startPointX, startPointY, offsetX, offsetY)
+//                println("angle for leg = $degs")
                 try {
                     drawImage(
                         image = backImage,
                         topLeft = Offset(0F, 0F)
                     )
-                    println("curArm = $curArm")
+//                    println("curArm = $curArm")
                     if (curArm.toInt() == 0 || curArm.toInt() == 2) {
-                        drawImage(
-                            image = leg,
-                            topLeft = Offset(
-                                (rotatePoint!!.first - rotatePointLeg!!.first).toFloat(),
-                                (rotatePoint.second - rotatePointLeg.second).toFloat()
-                            )
+                        rotate(degrees = degsForLeg(degs, curArm.toInt()), Offset(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat())) {
+                            drawImage(
+                                image = leg,
+                                topLeft = Offset(
+                                    (rotatePoint!!.first - rotatePointLeg!!.first).toFloat(),
+                                    (rotatePoint.second - rotatePointLeg.second).toFloat()
+                                )
+
 //                            topLeft = Offset(0F, 0F)
-                        )
+                            )
+                        }
                         drawImage(
                             image = legBody,
                             topLeft = Offset(0F, 0F)
@@ -327,13 +341,15 @@ fun MakeAlertDialog(
                             image = legBody,
                             topLeft = Offset(0F, 0F)
                         )
-                        drawImage(
-                            image = leg,
-                            topLeft = Offset(
-                                (rotatePoint!!.first - rotatePointLeg!!.first).toFloat(),
-                                (rotatePoint.second - rotatePointLeg.second).toFloat()
+                        rotate(degrees = degsForLeg(degs, curArm.toInt()), Offset(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat())) {
+                            drawImage(
+                                image = leg,
+                                topLeft = Offset(
+                                    (rotatePoint!!.first - rotatePointLeg!!.first).toFloat(),
+                                    (rotatePoint.second - rotatePointLeg.second).toFloat()
+                                )
                             )
-                        )
+                        }
                     }
                 } catch (e: NullPointerException) {
 //                    Toast.makeText(applicationContext,"No image", Toast.LENGTH_LONG).show()
