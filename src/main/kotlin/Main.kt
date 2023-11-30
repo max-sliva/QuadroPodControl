@@ -233,11 +233,19 @@ fun MakeAlertDialog(
 //    startPointY: Float,
     onUpdate: (x: Float) -> Unit
 ) { //показываем окно с нужным leg для его поворота
+//    var degsInDialog = 0f
+    var degs by remember { mutableStateOf(0f) }
+    degs = degsInLeg
+
     AlertDialog(
-        onDismissRequest = { openDialog.value = false },//действия при закрытии окна
+        onDismissRequest = { //действия при закрытии окна
+            openDialog.value = false
+            onUpdate(degs)
+            println("Exit")
+        },
         modifier = Modifier.fillMaxSize(),
         title = { Text(text = curArm) }, //заголовок окна
-        text = { //внутрення часть окна
+        text = { //внутренняя часть окна
             val backImage = useResource("back.PNG") { loadImageBitmap(it) }
             val legBody = useResource("leg${curArm.toInt() + 1}_body_.PNG") { loadImageBitmap(it) }//содержимое окна
             val pixMap = legBody.toPixelMap()
@@ -254,12 +262,9 @@ fun MakeAlertDialog(
             var offsetY by remember { mutableStateOf(0f) }
             var startPointX by remember { mutableStateOf(0f) }
             var startPointY by remember { mutableStateOf(0f) }
-            var degs by remember { mutableStateOf(0f) }
-            degs = degsInLeg
-//            println("for leg body pair.x = ${rotatePoint?.first}, pair.y = ${rotatePoint?.second}")
+
             Canvas(
                 modifier = Modifier.fillMaxSize()
-                    //todo добавить поворот leg в этом канвасе
                     .pointerInput(Unit) {
                         detectDragGestures(
                             onDragStart = { touch ->
@@ -271,10 +276,6 @@ fun MakeAlertDialog(
                                 offsetX = 0F //сбрасываем оффсеты, чтобы нормально двигать ногу
                                 offsetY = 0F
                                 var number = 0
-//                                startPointXArray[number] = startPointX
-//                                startPointYArray[number] = startPointY
-//                                offsetXArray[number] = offsetX
-//                                offsetYArray[number] = offsetY
                             },
                             onDrag = { change, dragAmount ->
                                 change.consume()
@@ -283,16 +284,9 @@ fun MakeAlertDialog(
                                 offsetX += dragAmount.x
                                 offsetY += dragAmount.y
                                 degs = angle(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat(), startPointX, startPointY, offsetX, offsetY)
-                                onUpdate(degs)
-
-//                                var number = 0
-//                                offsetXArray[number] += dragAmount.x
-//                                offsetYArray[number] += dragAmount.y
+                                println("angle = $degs")
                             },
-                            onDragEnd = {
-                                //  println("angle on drag end = $degs")
-//                           angleOnDragEnd = degs
-                            },
+                            onDragEnd = { },
                         )
                     }
             ) {
@@ -310,7 +304,6 @@ fun MakeAlertDialog(
                         }
                     }
                 }
-                //todo сделать поворот лап
 //                println("for leg pair.x = ${rotatePointLeg?.first}, pair.y = ${rotatePointLeg?.second}")
 //                val degs = angle(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat(), startPointX, startPointY, offsetX, offsetY)
 //                println("angle for leg = $degs")
@@ -321,17 +314,7 @@ fun MakeAlertDialog(
                     )
 //                    println("curArm = $curArm")
                     if (curArm.toInt() == 0 || curArm.toInt() == 2) {
-                        rotate(degrees = degsForLeg(degs, curArm.toInt()), Offset(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat())) {
-                            drawImage(
-                                image = leg,
-                                topLeft = Offset(
-                                    (rotatePoint!!.first - rotatePointLeg!!.first).toFloat(),
-                                    (rotatePoint.second - rotatePointLeg.second).toFloat()
-                                )
-
-//                            topLeft = Offset(0F, 0F)
-                            )
-                        }
+                        legRotate(curArm.toInt(), degs, leg, rotatePointLeg!!, rotatePoint!!)
                         drawImage(
                             image = legBody,
                             topLeft = Offset(0F, 0F)
@@ -341,15 +324,7 @@ fun MakeAlertDialog(
                             image = legBody,
                             topLeft = Offset(0F, 0F)
                         )
-                        rotate(degrees = degsForLeg(degs, curArm.toInt()), Offset(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat())) {
-                            drawImage(
-                                image = leg,
-                                topLeft = Offset(
-                                    (rotatePoint!!.first - rotatePointLeg!!.first).toFloat(),
-                                    (rotatePoint.second - rotatePointLeg.second).toFloat()
-                                )
-                            )
-                        }
+                        legRotate(curArm.toInt(), degs, leg, rotatePointLeg!!, rotatePoint!!)
                     }
                 } catch (e: NullPointerException) {
 //                    Toast.makeText(applicationContext,"No image", Toast.LENGTH_LONG).show()
@@ -359,7 +334,11 @@ fun MakeAlertDialog(
             }
         },
         confirmButton = { //кнопка Ok, которая будет закрывать окно
-            Button(onClick = { openDialog.value = false })
+            Button(onClick = {
+                openDialog.value = false
+                onUpdate(degs)
+                println("Ok pressed")
+            })
             { Text(text = "OK") }
         }
     )

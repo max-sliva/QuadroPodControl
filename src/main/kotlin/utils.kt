@@ -148,3 +148,32 @@ fun DrawScope.armRotate(
             }
     }
 }
+
+fun DrawScope.legRotate(
+    curArm: Int,
+    degs: Float,
+    leg: ImageBitmap,
+    rotatePointLeg: Pair<Int, Int>,
+    rotatePoint: Pair<Int, Int>
+) {
+    if (degs >=-89F)
+        rotate(degrees = degsForLeg(degs, curArm), Offset(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat())) {
+            drawImage(
+                image = leg,
+                topLeft = Offset(
+                    (rotatePoint!!.first - rotatePointLeg!!.first).toFloat(),
+                    (rotatePoint.second - rotatePointLeg.second).toFloat()
+                )
+            )
+    } else
+//        if()
+        rotate(degrees = degsForLeg(degs, curArm), Offset(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat())) {
+            drawImage(
+                image = leg,
+                topLeft = Offset(
+                    (rotatePoint!!.first - rotatePointLeg!!.first).toFloat(),
+                    (rotatePoint.second - rotatePointLeg.second).toFloat()
+                )
+            )
+        }
+}
