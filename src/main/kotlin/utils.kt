@@ -25,6 +25,7 @@ fun angle(
     if (offsetY.toInt() != 0)
         degs = Math.toDegrees(atan(tan).toDouble()).toFloat() //сам угол поворота
     else degs = 0F
+    println("angle = $degs")
     return degs
 }
 
@@ -48,6 +49,7 @@ fun DrawScope.armRotate(
 //                    if (degs<=65 || degs>=-90)
 //                    if (degs<=65)
     if (armNumber == 1) { //для arm1
+        angleForServoArm(degs, armNumber)
         if (degs <= 65 && degs > -85 && startPointX + offsetX < armRotatePointX)
             rotate(degrees = -degs, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                 drawImage(
@@ -176,4 +178,23 @@ fun DrawScope.legRotate(
                 )
             )
         }
+}
+
+fun angleForServoArm(degs: Float, arm: Int): Int {
+    var angle = 0
+    if (arm in 0..1) {
+        angle = convert(degs.toInt()+85, IntRange(0, 150), IntRange(30, 180))
+    }
+    println("to servo = $angle")
+    return angle
+}
+
+fun mapRange(number: Int, prevRange: IntRange, newRange: IntRange) : Int {
+    val ratio = number.toFloat() / (prevRange.last - prevRange.first)
+    return (ratio * (newRange.last - newRange.first) + newRange.first).toInt()
+}
+
+fun convert(number: Int, original: IntRange, target: IntRange): Int {
+    val ratio = (number - original.start).toFloat() / (original.endInclusive - original.start)
+    return (ratio * (target.endInclusive - target.start)).toInt()
 }

@@ -129,7 +129,7 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                             offsetYArray[number] += dragAmount.y
                         },
                         onDragEnd = {
-                            println("angle on drag end = $degs")
+//                            println("angle on drag end = $degs")
 //                           angleOnDragEnd = degs
                         },
                     )
@@ -284,7 +284,7 @@ fun MakeAlertDialog(
                                 offsetX += dragAmount.x
                                 offsetY += dragAmount.y
                                 degs = angle(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat(), startPointX, startPointY, offsetX, offsetY)
-                                println("angle = $degs")
+//                                println("angle = $degs")
                             },
                             onDragEnd = { },
                         )
