@@ -21,6 +21,7 @@ dependencies {
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.7.62")
+    implementation ("io.github.java-native:jssc:2.9.5")
 }
 
 compose.desktop {

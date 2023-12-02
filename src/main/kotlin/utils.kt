@@ -48,8 +48,9 @@ fun DrawScope.armRotate(
     //ограничиваем поворот
 //                    if (degs<=65 || degs>=-90)
 //                    if (degs<=65)
+    angleForServoArm(degs, armNumber)
     if (armNumber == 1) { //для arm1
-        angleForServoArm(degs, armNumber)
+//        angleForServoArm(degs, armNumber)
         if (degs <= 65 && degs > -85 && startPointX + offsetX < armRotatePointX)
             rotate(degrees = -degs, Offset(rotatePoints.first.toFloat(), rotatePoints.second.toFloat())) {
                 drawImage(
@@ -181,20 +182,27 @@ fun DrawScope.legRotate(
 }
 
 fun angleForServoArm(degs: Float, arm: Int): Int {
+    //arm1:  65  -80   servo: down 165, up 20
+//    arm2: -65 80    servo:
+//    arm3:           servo: down 20  up 165
     var angle = 0
-    if (arm in 0..1) {
-        angle = convert(degs.toInt()+85, IntRange(0, 150), IntRange(30, 180))
-    }
-    println("to servo = $angle")
+//    if (arm in 0..1) {
+//        angle = convert(degs.toInt()+85, IntRange(0, 150), IntRange(30, 180))
+//    }
+    if (arm==1 ) angle = (degs+100).toInt()
+    if (arm==2) angle = (degs+100).toInt()-40
+    if (arm==3) angle = (-degs+100).toInt()-20
+    if (arm==4) angle = (-degs+100).toInt()+20
+    println("arm$arm to servo = $angle")
     return angle
 }
 
-fun mapRange(number: Int, prevRange: IntRange, newRange: IntRange) : Int {
-    val ratio = number.toFloat() / (prevRange.last - prevRange.first)
-    return (ratio * (newRange.last - newRange.first) + newRange.first).toInt()
+fun angleForServoLeg(degs: Float, leg: Int): Int {
+    var angle = 0
+
+    return angle
 }
 
-fun convert(number: Int, original: IntRange, target: IntRange): Int {
-    val ratio = (number - original.start).toFloat() / (original.endInclusive - original.start)
-    return (ratio * (target.endInclusive - target.start)).toInt()
+fun sendToArduino(arm: Int, angle: Int){
+ //https://github.com/java-native/jssc/wiki/examples
 }
