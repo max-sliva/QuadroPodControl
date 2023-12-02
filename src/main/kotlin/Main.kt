@@ -95,16 +95,7 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                             startPointY = touch.y
                             offsetX = 0F //сбрасываем оффсеты, чтобы нормально двигать ногу
                             offsetY = 0F
-                            var number = 0
-                            if (startPointX < quadroPodBody.width / 2 && startPointY < quadroPodBody.height / 2) number =
-                                0      //для первой лапы
-                            else if (startPointX < quadroPodBody.width / 2 && startPointY > quadroPodBody.height / 2) number =
-                                1   //для второй лапы
-                            else if (startPointX > quadroPodBody.width / 2 && startPointY < quadroPodBody.height / 2) number =
-                                2   //для третьей лапы
-                            else if (startPointX > quadroPodBody.width / 2 && startPointY > quadroPodBody.height / 2) number =
-                                3    //для четвертой лапы
-
+                            var number = getArmNumber(startPointX, quadroPodBody, startPointY)
                             startPointXArray[number] = startPointX
                             startPointYArray[number] = startPointY
                             offsetXArray[number] = offsetX
@@ -117,14 +108,7 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                             offsetX += dragAmount.x
                             offsetY += dragAmount.y
                             var number = 0
-                            if (startPointX < quadroPodBody.width / 2 && startPointY < quadroPodBody.height / 2)
-                                number = 0 //для leg1
-                            else if (startPointX < quadroPodBody.width / 2 && startPointY > quadroPodBody.height / 2)
-                                number = 1 //для leg2
-                            else if (startPointX > quadroPodBody.width / 2 && startPointY < quadroPodBody.height / 2)
-                                number = 2   //для leg3
-                            else if (startPointX > quadroPodBody.width / 2 && startPointY > quadroPodBody.height / 2)
-                                number = 3    //для leg4
+                            number = getArmNumber(startPointX, quadroPodBody, startPointY)    //для leg4
                             offsetXArray[number] += dragAmount.x
                             offsetYArray[number] += dragAmount.y
                         },
@@ -221,6 +205,23 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
             }
         }
     }
+}
+
+private fun getArmNumber(
+    startPointX: Float,
+    quadroPodBody: ImageBitmap,
+    startPointY: Float
+): Int {
+    var number = 0
+    if (startPointX < quadroPodBody.width / 2 && startPointY < quadroPodBody.height / 2)
+        number = 0 //для leg1
+    else if (startPointX < quadroPodBody.width / 2 && startPointY > quadroPodBody.height / 2)
+        number = 1 //для leg2
+    else if (startPointX > quadroPodBody.width / 2 && startPointY < quadroPodBody.height / 2)
+        number = 2   //для leg3
+    else if (startPointX > quadroPodBody.width / 2 && startPointY > quadroPodBody.height / 2)
+        number = 3
+    return number
 }
 
 @OptIn(ExperimentalMaterialApi::class)
