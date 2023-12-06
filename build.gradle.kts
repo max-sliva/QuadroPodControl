@@ -23,7 +23,8 @@ dependencies {
     implementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.7.62")
     implementation ("io.github.java-native:jssc:2.9.5")
 }
-
+//to make exe run in terminal:
+// ./gradlew runDistributable
 compose.desktop {
     application {
         mainClass = "MainKt"
