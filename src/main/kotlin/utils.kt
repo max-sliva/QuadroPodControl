@@ -2,7 +2,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
+import jssc.SerialPort
 import kotlin.math.atan
+
 
 fun degsForLeg(degs: Float, curArm: Int) = degs * (if(curArm==0 || curArm==1) -1 else 1)
 
@@ -25,7 +27,7 @@ fun angle(
     if (offsetY.toInt() != 0)
         degs = Math.toDegrees(atan(tan).toDouble()).toFloat() //сам угол поворота
     else degs = 0F
-    println("angle = $degs")
+//    println("angle = $degs")
     return degs
 }
 
@@ -39,16 +41,22 @@ fun DrawScope.armRotate(
     offsetX: Float,
     offsetY: Float,
 //    rotatePoints: Array<Pair<Int, Int>>
-    rotatePoints: Pair<Int, Int>
-) {
+    rotatePoints: Pair<Int, Int>,
+    curSerialPort: SerialPort,
+    curAngleForArm: Int,
+    onAngleChanged:(x: Int) -> Unit
+    ) {
     val armRotatePointX = arm.width.toFloat()
     val armRotatePointY = (arm.height / 2).toFloat()
     val degs = angle(armRotatePointX, armRotatePointY + y0, startPointX, startPointY, offsetX, offsetY)
 //    println(" angle = $degs ")
-    //ограничиваем поворот
-//                    if (degs<=65 || degs>=-90)
-//                    if (degs<=65)
-    angleForServoArm(degs, armNumber)
+    val angleToComPort = angleForServoArm(degs, armNumber)
+//  todo разобраться с нумерацией сервов и сделать плавное изменение угла
+    if (curAngleForArm!=angleToComPort) {
+        println("for arm#$armNumber curAngleForArm = $curAngleForArm, angleToComPort = $angleToComPort")
+        onAngleChanged(angleToComPort)
+        if (curSerialPort.portName != "") writeAngleToComPort(curSerialPort, armNumber, angleToComPort)
+    }
     if (armNumber == 1) { //для arm1
 //        angleForServoArm(degs, armNumber)
         if (degs <= 65 && degs > -85 && startPointX + offsetX < armRotatePointX)
@@ -152,6 +160,14 @@ fun DrawScope.armRotate(
     }
 }
 
+fun writeAngleToComPort(curComPort: SerialPort, armNumber: Int, angleToComPort:  Int) {
+    println("trying to send angle = $angleToComPort for arm=$armNumber")
+    if (curComPort.isOpened) {
+        curComPort.setParams(9600, 8, 1, 0)
+        curComPort.writeString("${armNumber-1}-$angleToComPort\n")
+    }
+}
+
 fun DrawScope.legRotate(
     curArm: Int,
     degs: Float,
@@ -193,7 +209,7 @@ fun angleForServoArm(degs: Float, arm: Int): Int {
     if (arm==2) angle = (degs+100).toInt()-40
     if (arm==3) angle = (-degs+100).toInt()-20
     if (arm==4) angle = (-degs+100).toInt()+20
-    println("arm$arm to servo = $angle")
+//    println("arm$arm to servo = $angle")
     return angle
 }
 

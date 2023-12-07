@@ -1,19 +1,18 @@
+//import androidx.compose.ui.draw.EmptyBuildDrawCacheParams.size
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-//import androidx.compose.ui.draw.EmptyBuildDrawCacheParams.size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.loadImageBitmap
@@ -23,13 +22,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
-import java.lang.Math.toDegrees
-import kotlin.math.atan
+import jssc.SerialPort
+import jssc.SerialPortList
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+
 @Composable
 @Preview
-fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: Array<ImageBitmap>) {
+fun App(
+    quadroPodBody: ImageBitmap,
+    rotatePoints: Array<Pair<Int, Int>>,
+    arms: Array<ImageBitmap>,
+    portNames: Array<String>
+) {
 //    var text by remember { mutableStateOf("Hello, World!") }
     //массив с мапом: начальные точки, оффсеты и точки поворота в виде пар значений
 //    todo вставить в него все оффсеты, нач.точки и точки поворота
@@ -50,6 +54,12 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
     var startPointYArray = remember { mutableStateListOf<Float>() }
 //    var legStartPointXArray = remember { mutableStateListOf<Float>() }
 //    var legStartPointYArray = remember { mutableStateListOf<Float>() }
+    var degsForArms = remember { mutableStateListOf<Int>() } //массив для хранения углов для каждой arm
+    //вставляем углы для arms
+    degsForArms.add(100)
+    degsForArms.add(60)
+    degsForArms.add(80)
+    degsForArms.add(140)
     var degsForLegs = remember { mutableStateListOf<Float>() } //массив для хранения углов для каждой leg
     repeat(4) {
         startPointXArray.add(0F)
@@ -62,6 +72,8 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
     var startPointY by remember { mutableStateOf(0f) }
     val openDialog = remember { mutableStateOf(false) }
     var curArm by remember { mutableStateOf(-1) }
+    var curComPort by remember { mutableStateOf("") }
+    var curSerialPort by remember { mutableStateOf(SerialPort("0")) }
 //    print(" angle at start = $degs")
     MaterialTheme {
         Column(
@@ -80,6 +92,13 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 //                legStartPointYArray[curArm] = y
 //                println("degsForLegs = $x ")
             } //для вызова окна с нужной leg
+            DropdownDemo(portNames.toList()){x->
+                curComPort=x
+                if (curComPort!=""){
+                    curSerialPort = SerialPort(curComPort)
+                    curSerialPort.openPort()
+                }
+            }
             Canvas(modifier = Modifier.fillMaxSize()
                 .pointerInput(Unit) {
 //                    detectTapGestures(
@@ -133,6 +152,7 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
 //                            println("leg = $number")
                             curArm = number
                             openDialog.value = true
+                            println("curPort = $curComPort")
                         }
                     )
                 }
@@ -153,8 +173,10 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                         startPointYArray[0],
                         offsetXArray[0],
                         offsetYArray[0],
-                        rotatePoints[0]
-                    )
+                        rotatePoints[0],
+                        curSerialPort,
+                        degsForArms[0]
+                    ){x-> degsForArms[0]=x }
 //                    armRotate(0F,0F,arm1, startPointX, startPointY, offsetX, offsetY, rotatePoints)
                     val arm2 = arms[1]
 //                    val x0ForArm2 = rotatePoints[1].first
@@ -169,8 +191,10 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                         startPointYArray[1],
                         offsetXArray[1],
                         offsetYArray[1],
-                        rotatePoints[1]
-                    )
+                        rotatePoints[1],
+                        curSerialPort,
+                        degsForArms[1]
+                    ) {x-> degsForArms[1]=x}
                     val arm3 = arms[2]
                     val x0ForArm3 = rotatePoints[2].first - 40 //позиционируем третью лапу
                     armRotate(
@@ -182,8 +206,10 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                         startPointYArray[2],
                         offsetXArray[2],
                         offsetYArray[2],
-                        rotatePoints[2]
-                    )
+                        rotatePoints[2],
+                        curSerialPort,
+                        degsForArms[2]
+                    ) {x-> degsForArms[2]=x}
                     val arm4 = arms[3]
                     val x0ForArm4 = rotatePoints[3].first - 40
                     val y0ForArm4 = rotatePoints[3].second - 55 //позиционируем четвертую лапу
@@ -196,8 +222,10 @@ fun App(quadroPodBody: ImageBitmap, rotatePoints: Array<Pair<Int, Int>>, arms: A
                         startPointYArray[3],
                         offsetXArray[3],
                         offsetYArray[3],
-                        rotatePoints[3]
-                    )
+                        rotatePoints[3],
+                        curSerialPort,
+                        degsForArms[3]
+                    ) {x-> degsForArms[3]=x}
                 } catch (e: NullPointerException) {
 //                    Toast.makeText(applicationContext,"No image", Toast.LENGTH_LONG).show()
                     println("No image")
@@ -364,9 +392,11 @@ fun main() = application {
     println("points = ${rotatePoints.toList()}")
     println()
     println("image size on start= ${quadroPodBody.width} x ${quadroPodBody.height}")
+//    val portNames = SerialPortList.getPortNames()
+
     Window(onCloseRequest = ::exitApplication, state = WindowState(size = DpSize(bodyWidth.dp, bodyHeight.dp))) {
 //    Window(onCloseRequest = ::exitApplication ) {
-        App(quadroPodBody, rotatePoints, loadArms())
+        App(quadroPodBody, rotatePoints, loadArms(), SerialPortList.getPortNames())
     }
 }
 
@@ -382,3 +412,57 @@ fun loadArms(): Array<ImageBitmap> { //для загрузки изображе�
     return armImagesArray
 }
 
+@Composable
+fun DropdownDemo(itemsInitial:  List<String>, onUpdate: (x: String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+//    val items = listOf("com1", "com2", "com3")
+//    val disabledValue = "B"
+    var items = remember { mutableStateListOf<String>() }
+    itemsInitial.forEach {
+        if (!items.contains(it))items.add(it)
+    }
+    var selectedIndex by remember { mutableStateOf(-1) }
+    Box(modifier = Modifier
+        .wrapContentSize(Alignment.TopStart)) {
+        Text(
+            if (selectedIndex<0) "Выберите порт: ▼"
+            else items[selectedIndex],
+            modifier = Modifier.clickable(onClick = {
+                val tempPortList = SerialPortList.getPortNames().toList()
+                println("SerialPortList = $tempPortList")
+                tempPortList.forEach {
+                        if (!items.contains(it))items.add(it)
+                }
+                items.forEach{
+                    if (!tempPortList.contains(it)) {
+//                        println("$it not in SerialPortList")
+                        items.remove(it)
+                    }
+                }
+                expanded = true
+            })
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth().background(
+                Color.White)
+        ) {
+            items.forEachIndexed { index, s ->
+                DropdownMenuItem(onClick = {
+                    selectedIndex = index
+                    expanded = false
+                    onUpdate(s)
+                    println("selected = $s")
+                }) {
+//                    val disabledText = if (s == disabledValue) {
+//                        " (Disabled)"
+//                    } else {
+//                        ""
+//                    }
+                    Text(text = s )
+                }
+            }
+        }
+    }
+}
