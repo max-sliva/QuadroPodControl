@@ -55,7 +55,7 @@ fun DrawScope.armRotate(
     if (curAngleForArm!=angleToComPort) {
         println("for arm#$armNumber curAngleForArm = $curAngleForArm, angleToComPort = $angleToComPort")
         onAngleChanged(angleToComPort)
-        if (curSerialPort.portName != "") writeAngleToComPort(curSerialPort, armNumber, angleToComPort)
+//        if (curSerialPort.portName != "") writeAngleToComPort(curSerialPort, armNumber, angleToComPort)
     }
     if (armNumber == 1) { //для arm1
 //        angleForServoArm(degs, armNumber)
@@ -163,8 +163,14 @@ fun DrawScope.armRotate(
 fun writeAngleToComPort(curComPort: SerialPort, armNumber: Int, angleToComPort:  Int) {
     println("trying to send angle = $angleToComPort for arm=$armNumber")
     if (curComPort.isOpened) {
+        var armNumberToSend = armNumber
         curComPort.setParams(9600, 8, 1, 0)
-        curComPort.writeString("${armNumber-1}-$angleToComPort\n")
+//        if (armNumber == 3) armNumberToSend = 4
+//        if (armNumber == 4) armNumberToSend = 3
+//        curComPort.writeString("${(armNumberToSend-1)*2}-$angleToComPort\n")
+        if (armNumber == 2) armNumberToSend = 3
+        if (armNumber == 3) armNumberToSend = 2
+        curComPort.writeString("${armNumberToSend*2}-$angleToComPort\n")
     }
 }
 

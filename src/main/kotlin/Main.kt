@@ -134,6 +134,8 @@ fun App(
                         onDragEnd = {
 //                            println("angle on drag end = $degs")
 //                           angleOnDragEnd = degs
+                            val number = getArmNumber(startPointX, quadroPodBody, startPointY)
+                            if (curSerialPort.portName != "") writeAngleToComPort(curSerialPort, number, degsForArms[number])
                         },
                     )
                 }
