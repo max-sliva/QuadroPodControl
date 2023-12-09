@@ -34,7 +34,6 @@ fun App(
     arms: Array<ImageBitmap>,
     portNames: Array<String>
 ) {
-//    var text by remember { mutableStateOf("Hello, World!") }
     //массив с мапом: начальные точки, оффсеты и точки поворота в виде пар значений
 //    todo вставить в него все оффсеты, нач.точки и точки поворота
     var arrayForGettingAngles = arrayOf<HashMap<String, Pair<Float, Float>>>()
@@ -66,7 +65,7 @@ fun App(
         startPointYArray.add(0F)
 //        legStartPointXArray.add(0F)
 //        legStartPointYArray.add(0F)
-        degsForLegs.add(0F)
+        degsForLegs.add(80F)
     }
     var startPointX by remember { mutableStateOf(0f) }
     var startPointY by remember { mutableStateOf(0f) }
@@ -84,7 +83,8 @@ fun App(
             if (openDialog.value) MakeAlertDialog(
                 curArm.toString(),
                 openDialog,
-                degsForLegs[curArm]
+                degsForLegs[curArm],
+                curSerialPort
 //                legStartPointXArray[curArm],
 //                legStartPointYArray[curArm]
             ) { x -> //ф-ия обратного вызова для запоминания угла
@@ -92,7 +92,7 @@ fun App(
 //                legStartPointYArray[curArm] = y
 //                println("degsForLegs = $x ")
             } //для вызова окна с нужной leg
-            DropdownDemo(portNames.toList()){x->
+            DropdownDemo(portNames.toList()){x-> //лямбда для ф-ии обратного вызова
                 curComPort=x
                 if (curComPort!=""){
                     curSerialPort = SerialPort(curComPort)
@@ -101,12 +101,6 @@ fun App(
             }
             Canvas(modifier = Modifier.fillMaxSize()
                 .pointerInput(Unit) {
-//                    detectTapGestures(
-//                        onLongPress = {
-//                            println("x = ${it.x}  y = ${it.y}")
-//                        }
-//                    )
-//                   if (degs<=65)
                     detectDragGestures(
                         onDragStart = { touch ->
 //                            println("\nStart of the interaction is x=${touch.x} y=${touch.y}")
@@ -135,7 +129,7 @@ fun App(
 //                            println("angle on drag end = $degs")
 //                           angleOnDragEnd = degs
                             val number = getArmNumber(startPointX, quadroPodBody, startPointY)
-                            if (curSerialPort.portName != "") writeAngleToComPort(curSerialPort, number, degsForArms[number])
+                            if (curSerialPort.portName != "") writeArmAngleToComPort(curSerialPort, number, degsForArms[number])
                         },
                     )
                 }
@@ -260,6 +254,7 @@ fun MakeAlertDialog(
     curArm: String,
     openDialog: MutableState<Boolean>,
     degsInLeg: Float,
+    curSerialPort: SerialPort,
 //    startPointX: Float,
 //    startPointY: Float,
     onUpdate: (x: Float) -> Unit
@@ -317,7 +312,15 @@ fun MakeAlertDialog(
                                 degs = angle(rotatePoint!!.first.toFloat(), rotatePoint.second.toFloat(), startPointX, startPointY, offsetX, offsetY)
 //                                println("angle = $degs")
                             },
-                            onDragEnd = { },
+                            onDragEnd = {
+                                //тут передавать угол в ардуино
+
+                                val curLeg = curArm.toInt()
+                                println("degs for leg#${curLeg}  = $degs")
+                                val angle = angleForServoLeg(degs, curLeg)
+                                println("angle for leg#${curLeg} to arduino = $angle")
+                                if (curSerialPort.portName != "") writeArmAngleToComPort(curSerialPort, curLeg, angle, false)
+                            },
                         )
                     }
             ) {
@@ -415,7 +418,7 @@ fun loadArms(): Array<ImageBitmap> { //для загрузки изображе�
 }
 
 @Composable
-fun DropdownDemo(itemsInitial:  List<String>, onUpdate: (x: String) -> Unit) {
+fun DropdownDemo(itemsInitial:  List<String>, onUpdate: (x: String) -> Unit) { //комбобокс для выбора компорта для подключения к Arduino
     var expanded by remember { mutableStateOf(false) }
 //    val items = listOf("com1", "com2", "com3")
 //    val disabledValue = "B"
@@ -424,18 +427,17 @@ fun DropdownDemo(itemsInitial:  List<String>, onUpdate: (x: String) -> Unit) {
         if (!items.contains(it))items.add(it)
     }
     var selectedIndex by remember { mutableStateOf(-1) }
-    Box(modifier = Modifier
-        .wrapContentSize(Alignment.TopStart)) {
-        Text(
-            if (selectedIndex<0) "Выберите порт: ▼"
-            else items[selectedIndex],
-            modifier = Modifier.clickable(onClick = {
-                val tempPortList = SerialPortList.getPortNames().toList()
+    Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+        Text( //заголовок комбобокса
+            if (selectedIndex<0) "Выберите порт: ▼" //если еще ничего не выбрано
+            else items[selectedIndex], //если выбрано
+            modifier = Modifier.clickable(onClick = { //при нажатии на текст раскрываем комбобокс
+                val tempPortList = SerialPortList.getPortNames().toList() //получаем активные порты
                 println("SerialPortList = $tempPortList")
-                tempPortList.forEach {
+                tempPortList.forEach {//добавляем новые порты к списку
                         if (!items.contains(it))items.add(it)
                 }
-                items.forEach{
+                items.forEach{//убираем отключенные порты
                     if (!tempPortList.contains(it)) {
 //                        println("$it not in SerialPortList")
                         items.remove(it)
@@ -444,19 +446,22 @@ fun DropdownDemo(itemsInitial:  List<String>, onUpdate: (x: String) -> Unit) {
                 expanded = true
             })
         )
-        DropdownMenu(
+        DropdownMenu( //сам выпадающий список для комбобокса
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth().background(
-                Color.White)
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
         ) {
-            items.forEachIndexed { index, s ->
-                DropdownMenuItem(onClick = {
-                    selectedIndex = index
-                    expanded = false
-                    onUpdate(s)
-                    println("selected = $s")
-                }) {
+            items.forEachIndexed { index, s -> //заполняем элементы выпадающего списка
+                DropdownMenuItem(
+                    onClick = { //обработка нажатия на порт
+                        selectedIndex = index
+                        expanded = false
+                        onUpdate(s)
+                        println("selected = $s")
+                    }
+                ) {
 //                    val disabledText = if (s == disabledValue) {
 //                        " (Disabled)"
 //                    } else {

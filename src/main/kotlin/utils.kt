@@ -5,7 +5,6 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import jssc.SerialPort
 import kotlin.math.atan
 
-
 fun degsForLeg(degs: Float, curArm: Int) = degs * (if(curArm==0 || curArm==1) -1 else 1)
 
 fun angle(
@@ -160,8 +159,8 @@ fun DrawScope.armRotate(
     }
 }
 
-fun writeAngleToComPort(curComPort: SerialPort, armNumber: Int, angleToComPort:  Int) {
-    println("trying to send angle = $angleToComPort for arm=$armNumber")
+fun writeArmAngleToComPort(curComPort: SerialPort, armNumber: Int, angleToComPort:  Int, isArm: Boolean=true) {
+    println("trying to send angle = $angleToComPort for ${if (isArm) "arm" else "leg"}=$armNumber")
     if (curComPort.isOpened) {
         var armNumberToSend = armNumber
         curComPort.setParams(9600, 8, 1, 0)
@@ -170,7 +169,8 @@ fun writeAngleToComPort(curComPort: SerialPort, armNumber: Int, angleToComPort: 
 //        curComPort.writeString("${(armNumberToSend-1)*2}-$angleToComPort\n")
         if (armNumber == 2) armNumberToSend = 3
         if (armNumber == 3) armNumberToSend = 2
-        curComPort.writeString("${armNumberToSend*2}-$angleToComPort\n")
+        if (isArm) curComPort.writeString("${armNumberToSend*2}-$angleToComPort\n")
+        else curComPort.writeString("${armNumberToSend*2+1}-$angleToComPort\n")
     }
 }
 
@@ -222,6 +222,20 @@ fun angleForServoArm(degs: Float, arm: Int): Int {
 fun angleForServoLeg(degs: Float, leg: Int): Int {
     var angle = 0
 
+    when (leg){
+        0, 3-> {
+            angle = 180-(degs+90).toInt()
+        }
+        1, 2-> {
+            angle = (degs+90).toInt()
+        }
+//        2-> {
+//            angle = 0
+//        }
+//        3-> {
+//            angle = 0
+//        }
+    }
     return angle
 }
 
